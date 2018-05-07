@@ -10,33 +10,34 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// Variables used for command line parameters
+// Member variables
 var (
 	Token string
 )
 
+// @package
+// package initialization
 func init() {
-
+	//Parse command line arguments.
 	flag.StringVar(&Token, "t", "", "Bot Token")
 	flag.Parse()
 }
 
+// @package
+// package entory point
 func main() {
-
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + Token)
-	if err != nil {
-		fmt.Println("error creating Discord session,", err)
+	if !checkError(err, "error creating Discord session,") {
 		return
 	}
 
-	// Register the messageCreate func as a callback for MessageCreate events.
-	dg.AddHandler(messageCreate)
+	// Set eventParser to session.
+	dg.AddHandler(eventParser)
 
 	// Open a websocket connection to Discord and begin listening.
 	err = dg.Open()
-	if err != nil {
-		fmt.Println("error opening connection,", err)
+	if !checkError(err, "error opening connection,") {
 		return
 	}
 
@@ -50,22 +51,37 @@ func main() {
 	dg.Close()
 }
 
-// This function will be called (due to AddHandler above) every time a new
-// message is created on any channel that the autenticated bot has access to.
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	// Ignore all messages created by the bot itself
+// @fn
+// Parse Discord events.
+// @param
+func eventParser(session *discordgo.Session, message *discordgo.MessageCreate) {
+	// Ignore all messages created by the bot itself.
 	// This isn't required in this specific example but it's a good practice.
-	if m.Author.ID == s.State.User.ID {
+	if message.Author.ID == session.State.User.ID {
 		return
 	}
+
 	// If the message is "ping" reply with "Pong!"
-	if m.Content == "ping" {
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
+	if message.Content == "ping" {
+		session.ChannelMessageSend(message.ChannelID, "Pong!")
 	}
 
 	// If the message is "pong" reply with "Ping!"
-	if m.Content == "pong" {
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
+	if message.Content == "pong" {
+		session.ChannelMessageSend(message.ChannelID, "Ping!")
 	}
+}
+
+// @fn
+// Check error.
+// @param err : Error handler.
+// @param message : Error message which is dumped to log.
+// @return : Return false if error is happend.
+func checkError(err error, message string) bool {
+	//error check
+	if err != nil {
+		fmt.Println(message, err)
+		return false
+	}
+	return true
 }
