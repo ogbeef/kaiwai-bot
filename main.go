@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -56,19 +57,13 @@ func main() {
 // @param
 func eventParser(session *discordgo.Session, message *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself.
-	// This isn't required in this specific example but it's a good practice.
 	if message.Author.ID == session.State.User.ID {
 		return
 	}
 
-	// If the message is "ping" reply with "Pong!"
-	if message.Content == "ping" {
-		session.ChannelMessageSend(message.ChannelID, "Pong!")
-	}
-
-	// If the message is "pong" reply with "Ping!"
-	if message.Content == "pong" {
-		session.ChannelMessageSend(message.ChannelID, "Ping!")
+	// PingPong Command.
+	if checkRegexp("^(p|P)ing", message.Content) {
+		pingPongEvent(session, message)
 	}
 }
 
@@ -84,4 +79,21 @@ func checkError(err error, message string) bool {
 		return false
 	}
 	return true
+}
+
+// @fn
+// Check regexp.
+// @param reg : Regular Expression.
+// @param str : Target string.
+// @return : Return true if the regexp is match.
+func checkRegexp(reg string, str string) bool {
+	return regexp.MustCompile(reg).Match([]byte(str))
+}
+
+// @fn
+// Ping Pong Event.
+// @param session : Discord session.
+// @param message : Received message.
+func pingPongEvent(session *discordgo.Session, message *discordgo.MessageCreate) {
+	session.ChannelMessageSend(message.ChannelID, "Pong!")
 }
